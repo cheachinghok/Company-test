@@ -18,6 +18,9 @@ The goal of this project is to test the usability, design, and user experience o
 git clone https://github.com/cheachinghok/Company-test.git
 cd Company-test
 
+## using node v22.5.1
+## using npm 10.8.2
+
 ### 1. Install Dependencies
 
   npm install
