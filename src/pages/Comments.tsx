@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import Footer from '../components/Footer';
 
 // Simple Htmlview component to render HTML safely
 const Htmlview = ({ htmlString }: { htmlString: string }) => (
@@ -20,7 +21,7 @@ const App = () => {
         setLoading(true);
         setError(null);
         // Fetch the list of top story IDs
-        const response = await fetch('https://hacker-news.firebaseio.com/v0/newstories.json');
+        const response = await fetch('https://hacker-news.firebaseio.com/v0/topstories.json');
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -75,11 +76,9 @@ const App = () => {
 
       setLoading(true);
       
-      // Use Promise.all to fetch all story details concurrently
       try {
-        const allKidsIds = stories.flatMap(item => item.kids ?? []);
-
-        console.log(allKidsIds);
+        let allKidsIds = stories.flatMap(item => item.kids ?? []);
+        allKidsIds = allKidsIds.slice(0, 30)
         const commentsPromises = allKidsIds.map(async (kids) => {
             const response = await fetch(`https://hacker-news.firebaseio.com/v0/item/${kids}.json?print=pretty`);
             if (!response.ok) {
@@ -89,7 +88,21 @@ const App = () => {
         });
         // Wait for all promises to resolve
         const results = await Promise.all(commentsPromises);
-        setComments(results.filter(comment => comment && !comment.deleted && !comment.dead));
+        console.log("Comments:", results);
+        const commentsParent = results.map(async (kids) => {
+            const response = await fetch(`https://hacker-news.firebaseio.com/v0/item/${kids.parent}.json?print=pretty`);
+            if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status} for item ${kids.parent}`);
+            }
+            return response.json();
+        });
+        const resultsParent = await Promise.all(commentsParent);
+        const combined = results.map((comment, index) => ({
+            parent: resultsParent[index],
+            comment: comment
+          }));
+        console.log("combined:",combined);
+        setComments(combined);
       } catch (e) {
         console.error("Error fetching story details:", e);
         setError("Failed to load story details. Some stories might not be displayed.");
@@ -119,9 +132,35 @@ const App = () => {
     
   return (
     <div className="min-h-screen min-w-screen font-inter flex flex-col items-center">
-      {/* Header */}
-      
 
+
+      <main className="container">
+        <ul className="bg-[#e8e8e8]">
+          {comments.map((story, index) => (
+            <li key={index} className="px-1 py-2 duration-200">
+                <div >
+                  <div className="text-xs text-gray-600 flex flex-wrap items-center gap-1">
+                    <span className="text-sm text-gray-500">&#9650; </span>
+                    <span className="font-semibold text-gray-800">{story.comment.by}</span>
+                    <span>·</span>
+                    <span>{getTimeAgo(story.comment.time)}</span>
+                    <span>|</span>
+                    <a href="#" className="text-blue-600 hover:underline"> <span className='text-gray-500'>parent</span> </a>
+                    <span>|</span>
+                    <a href='#' className="text-blue-600 hover:underline"><span className='text-gray-500'>context</span></a>
+                    <span>|</span>
+                    <span>
+                      on: <span className="text-gray-500">{story.parent?.title}</span>
+                    </span>
+                  </div>
+                  <div className='w-8xl text-black prose break-words pl-4'>
+                      Comment: <span dangerouslySetInnerHTML={{ __html: story.comment.text }} />
+                  </div>
+                </div>
+            </li>
+          ))}
+        </ul>
+      </main>
       {/* Loading and Error Messages */}
       {loading && (
         <div className="text-center text-gray-600 text-xl font-semibold mt-8">
@@ -142,77 +181,9 @@ const App = () => {
           No stories found.
         </div>
       )}
-
-      <main className="w-full max-w-scree px-50">
-        <ul className="bg-[#e8e8e8]">
-            <div>
-                {/* {stories} */}
-                
-            </div>
-          {comments.map((story, index) => (
-            <li key={story.id} className="px-5 py-2 duration-200">
-
-                <div >
-                    <span className='text-gray-500'>{index+1} .</span> 
-                    <span className="text-sm text-gray-500">&#9650; </span>
-                    {/* <span>{perent.title}</span> */}
-                    <div className='w-8xl text-black prose break-words'>
-                        <Htmlview htmlString={story.text} />
-                    </div>
-                    
-                    
-                    {/* <a
-                        href={story.url || `https://news.ycombinator.com/item?id=${story.id}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className=" font-semibold hover:text-blue-900 transition-colors duration-200 mb-2 truncate"
-                    >
-                        <span className='text-black text-base'>{story.title}</span> 
-                    </a>
-                    <a 
-                        href={story.url || `https://news.ycombinator.com/item?id=${story.id}`} 
-                        target="_blank"
-                        className=" font-semibold hover:text-blue-900 transition-colors duration-200 mb-2 truncate">
-                        <span className='text-xs text-gray-500'>(</span>
-                        <span className='text-xs text-gray-500 hover:underline'>{story.url ? new URL(story.url).hostname.replace(/^www\./, '') : ""}</span>
-                        <span className='text-xs text-gray-500'>)</span>  
-                    </a>  */}
-                </div>
-                {/* <div className="text-gray-600 text-xs ml-9">
-                    <span className="mr-1">
-                    <span className="">{story.score}</span> points 
-                    </span>
-                    <span className="mr-1">
-                    by <span className="">{story.by}</span>
-                    </span>
-                    <span className="mr-1">
-                    <span className="">{getTimeAgo(story.time)}</span> 
-                    </span>
-                    <span>|</span>
-                    <span className="mx-1">
-                    hide 
-                    </span>
-                    <span className="mr-1">|</span>
-                    <span className="mx-1">
-                    past 
-                    </span>
-                    <span className="mr-1">|</span>
-                    <span className="mx-1">
-                    discuss 
-                    </span>
-                    {story.descendants != 0 && (
-                        <>
-                            <span className="mr-1">|</span>
-                            <span>
-                                <span className="">{story.descendants || 0}</span> comments
-                            </span>
-                        </>
-                    )}
-                </div> */}
-            </li>
-          ))}
-        </ul>
-      </main>
+      <div className="container">
+          <Footer />
+        </div>
     </div>
   );
 };
