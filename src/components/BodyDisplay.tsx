@@ -85,9 +85,7 @@ const App = ({ stories, type }: StoriesProps) => {
                         {story.descendants > 0 && (
                             <>
                                 <span className="text-gray-400">|</span>
-                                <span className="hover:underline text-xs">
-                                    {story.descendants} comments
-                                </span>
+                                <Link to={`/story/${story.id}`} ><span className="hover:underline">{story.descendants} comments</span></Link>
                             </>
                         )}
                     </>
