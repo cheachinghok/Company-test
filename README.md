@@ -16,15 +16,15 @@ The goal of this project is to test the usability, design, and user experience o
 
 ```bash
 git clone https://github.com/cheachinghok/Company-test.git
-cd your-project-name
+cd Company-test
 
-### 2. Install Dependencies
+### 1. Install Dependencies
 
   npm install
   # or
   yarn install
 
-### 3.  Start the Application
+### 2.  Start the Application
 
   npm run dev
   # or
